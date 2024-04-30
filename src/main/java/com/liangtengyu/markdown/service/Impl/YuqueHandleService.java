@@ -2,6 +2,7 @@ package com.liangtengyu.markdown.service.Impl;
 
 import com.liangtengyu.markdown.entity.MarkDown;
 import com.liangtengyu.markdown.utils.MarkDownUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -12,8 +13,10 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.net.URL;
+import static com.liangtengyu.markdown.utils.OSUtils.*;
 
+
+@Slf4j
 public class YuqueHandleService extends MarkDownService {
 
 
@@ -56,7 +59,7 @@ public class YuqueHandleService extends MarkDownService {
                 code.replaceWith(pre);
             }
         } catch (NullPointerException e) {
-            System.out.println("一些为空");
+            log.info("一些为空");
         }
         //只要主要信息
         Elements elementsByClass = element.getElementsByClass("ne-viewer-body");
@@ -69,7 +72,30 @@ public class YuqueHandleService extends MarkDownService {
 
     //"https://www.yuque.com/wangwangbunian-izczt/by3cic/vfw8xz6t003msaba#35c267ba"
     public static Element startChrome(String url) {
-        System.setProperty("webdriver.chrome.driver", "chromeDriver/chromedriver_linux64/chromedriver");
+        String driverName = "chromeDriver/chromedriver-win64/chromedriver.exe";
+
+        if (isWindows()) {
+            log.info("当前操作系统为 Windows");
+            driverName = "chromeDriver/chromedriver_win64/chromedriver.exe";
+
+        } else if (isMac()) {
+            log.info("当前操作系统为 macOS");
+            if (isARM()) {
+                log.info("ARM 架构");
+                driverName = "chromeDriver/chromedriver_mac64/chromedriver";
+            } else {
+                log.info("非 ARM 架构");
+                driverName = "chromeDriver/chromedriver_mac_arm64/chromedriver";
+            }
+        } else if (isLinux()) {
+            log.info("当前操作系统为 Linux");
+            driverName = "chromeDriver/chromedriver_linux64/chromedriver";
+        } else {
+            log.info("无法识别的操作系统");
+        }
+
+        System.setProperty("webdriver.chrome.driver", driverName);
+
         ChromeOptions chromeOptions = new ChromeOptions();
         chromeOptions.addArguments("--headless");
         chromeOptions.addArguments("--disable-gpu");
@@ -87,7 +113,7 @@ public class YuqueHandleService extends MarkDownService {
                 jsExecutor.executeScript("window.scrollTo(0," + i / 100.0 + "* document.body.scrollHeight );");
                 Thread.sleep(50);
             }
-            System.out.println("开始滚动代码块");
+            log.info("开始滚动代码块");
 
             // 使用WebDriverWait等待页面加载完成
             WebDriverWait wait = new WebDriverWait(driver, 10);
@@ -102,7 +128,7 @@ public class YuqueHandleService extends MarkDownService {
                 // 使用JavascriptExecutor再滚动到页面底部
                 jsExecutor.executeScript("arguments[0].scrollTop = arguments[0].scrollHeight;", codeBlock);
             } catch (TimeoutException e) {
-                System.out.println("滚动条等超时");
+                log.info("滚动条等超时");
             }
             // 继续等待内部代码块组件的加载
 
